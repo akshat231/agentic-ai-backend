@@ -1,0 +1,54 @@
+{
+  "server": {
+    "port": 5000,
+    "host": "localhost",
+    "protocol": "http"
+  },
+  "cors": {
+    "origin": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    "allowedHeaders": ["Content-Type", "Authorization"]
+  },
+  "database": {
+    "host": "localhost",
+    "port": 27017,
+    "name": "myapp",
+    "options": {
+      "useNewUrlParser": true,
+      "useUnifiedTopology": true
+    }
+  },
+  "jwt": {
+    "secret": "your-secret-key",
+    "expiresIn": "1d"
+  },
+  "logging": {
+    "level": "debug",
+    "format": "dev"
+  },
+  "api": {
+    "prefix": "/api",
+    "version": "v1"
+  },
+  "reddit": {
+    "clientId": "reddit-client-id",
+    "redirectUri": "http://localhost:5000/api/v1/reddit/callback",
+    "state": "random-state-string",
+    "scope": "identity,edit,flair,history,modconfig,modflair,modlog,modposts,modwiki,modcontributors,mysubreddits,privatemessages,read,report,save,submit,subscribe,vote,wikiedit,wikiread",
+    "appName": "Social Manager"
+  },
+  "langfuse": {
+    "baseUrl": "https://cloud.langfuse.com",
+    "secretKey": "sk-secret-key",
+    "publicKey": "pk-public-key"
+  },
+  "llm": {
+    "openai": {
+      "apiKey": "your-openai-api-key",
+      "model": "gpt-4o-mini",
+      "temperature": "0.7",
+      "maxTokens": "10000",
+      "modelProvider": "openai"
+    }
+  }
+}

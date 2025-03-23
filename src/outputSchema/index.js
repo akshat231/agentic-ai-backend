@@ -1,0 +1,1 @@
+const intentSchema = require('./intentDetectorSchema')
