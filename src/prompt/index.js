@@ -1,7 +1,9 @@
 const redditToolDetectorPrompt = require('./redditToolDetectorPrompt');
-const formatDataPrompt = require('./ formatDataPrompt');
+const redditToolResponseFormatterPrompt = require('./redditFormatDataPrompt');
+const redditPostInformationPrompt = require('./redditPostInformationPrompt');
 
 module.exports = {
     redditToolDetectorPrompt,
-    formatDataPrompt
+    redditToolResponseFormatterPrompt,
+    redditPostInformationPrompt
 }

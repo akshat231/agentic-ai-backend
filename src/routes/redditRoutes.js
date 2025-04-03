@@ -7,7 +7,6 @@ const logger = require("../utils/logger");
 const ApiResponse = require("../utils/apiResponse");
 const redis = require("../utils/redisDB");
 const redditController = require("../controllers/redditController");
-const { redditLangraphAgent } = require('../agent');
 const initializeChatModel = require('../chatModel')
 // Route to initiate Reddit OAuth by opening the browser
 router.get("/auth-code", async (req, res, next) => {
@@ -346,6 +345,18 @@ router.post('/process-user-prompt', async (req, res) => {
   }
 });
 
+router.post('/test-llm-result', async (req, res, next) => {
+  try {
+    const chatModel = await initializeChatModel();
+    const response = await redditController.testLLMResult(req.body, chatModel);
+    return res.status(200).json(ApiResponse.success("LLM result fetched", response));
+  } catch (error) {
+    logger.error(`Error in getting LLM result: ${error.message}`);
+    return res.status(500).json(ApiResponse.error("Internal server error", 500));
+  }
+});
+
+
 router.post('/get-llm-result', async (req, res, next) => {
   try {
     const chatModel = await initializeChatModel();
@@ -353,6 +364,31 @@ router.post('/get-llm-result', async (req, res, next) => {
     return res.status(200).json(ApiResponse.success("LLM result fetched", response));
   } catch (error) {
     logger.error(`Error in getting LLM result: ${error.message}`);
+    return res.status(500).json(ApiResponse.error("Internal server error", 500));
+  }
+});
+
+
+
+router.post('/format-response', async (req, res, next) => {
+  try {
+    const chatModel = await initializeChatModel();
+    const response = await redditController.formatResponse(req.body, chatModel);
+    return res.status(200).json(ApiResponse.success("Response formatted", response));
+  } catch (error) {
+    logger.error(`Error in formatting response: ${error.message}`);
+    return res.status(500).json(ApiResponse.error("Internal server error", 500));
+  }
+});
+
+
+router.post('/generate-content', async (req, res, next) => {
+  try {
+    const chatModel = await initializeChatModel();
+    const response = await redditController.generateContent(req.body, chatModel);
+    return res.status(200).json(ApiResponse.success("Post data fetched", response));
+  } catch (error) {
+    logger.error(`Error in getting post data: ${error.message}`);
     return res.status(500).json(ApiResponse.error("Internal server error", 500));
   }
 });

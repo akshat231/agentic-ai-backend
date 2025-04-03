@@ -1,11 +1,9 @@
-const config = require('config');
 const logger = require('../utils/logger');
 const  initializeChatModel  = require('../chatModel');
 const runGraph = require('../graph/redditLanggraph');
 
 class redditLangraphAgent {
     constructor() {
-        this.initialize();
     }
 
     async initialize() {

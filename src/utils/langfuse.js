@@ -1,10 +1,11 @@
-const { Langfuse } = require("langfuse");
-const config = require('config');
-
-const langfuse = new Langfuse({
-  secretKey: config.get('langfuse.secretKey'),
+const { CallbackHandler } =  require("langfuse-langchain");
+const config = require ('config');
+ 
+// Initialize Langfuse callback handler
+const langfuseHandler = new CallbackHandler({
   publicKey: config.get('langfuse.publicKey'),
-  baseUrl: config.get('langfuse.baseUrl'),
+  secretKey: config.get('langfuse.secretKey'),
+  baseUrl: config.get('langfuse.baseUrl')
 });
 
-module.exports = langfuse;
+module.exports = langfuseHandler;

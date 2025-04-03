@@ -1,10 +1,10 @@
 const { Tool } = require('@langchain/core/tools')
 const { z } = require("zod");
 const redis = require("../utils/redisDB");
-const redditController = require('../controllers/redditController');
-const logger = require('../utils/logger')
+const logger = require("../utils/logger");
 const axios = require('axios');
 const config = require('config');
+const redditServices = require('../services/redditService');
 
 class redditBaseTools extends Tool {
     constructor({ name, description, schema }) {
@@ -13,7 +13,7 @@ class redditBaseTools extends Tool {
         this.description = description;
         this.schema = schema;
         this.redis = redis;
-        this.controller = redditController
+        this.service = redditServices;
       }
 }
 
@@ -39,7 +39,7 @@ class authCodeTool extends redditBaseTools {
               logger.info("response fetched successfully");
               const authCode = await this.waitForAuthCode();
               logger.info('auth code is retrieved and stored in redis successfully');
-              return response.data;
+              return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Auth Code Generation: ', error);
             throw error;
@@ -108,7 +108,7 @@ class accessTokenTool extends redditBaseTools  {
               };
             const response = await axios.request(accessTokenConfig);
             logger.info(`Reddit access token received: ${response.access_token}`);
-            return response.data;
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Access Token Generation');
             throw error;
@@ -135,7 +135,7 @@ class validateAccessTokenTool extends redditBaseTools {
                 headers: { }
             };
             const response = await axios.request(validateAccessTokenConfig);
-            return response.data;
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Validate Access Token');
             throw error;
@@ -158,8 +158,9 @@ class userInfoTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.getUserInfo(accessToken);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.getUserInfo(accessToken, appName);
+            return { data: response, description: this.description};
         } catch (error) {
             logger.error('Error in User Info');
             throw error;
@@ -184,8 +185,9 @@ class userKarmaTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.getUserKarma(accessToken);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.getUserKarma(accessToken, appName);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in User Karma');
             throw error;
@@ -209,8 +211,9 @@ class userTrophiesTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.getUserTrophies(accessToken);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.getUserTrophies(accessToken, appName);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in User Trophies');
             throw error;
@@ -239,8 +242,9 @@ class subredditPostsTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.getSubredditPosts(accessToken, subreddit, sort, limit, after);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.getSubredditPosts(accessToken,appName, subreddit, sort, limit, after);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Subreddit Posts');
             throw error;
@@ -265,8 +269,9 @@ class userPostsTool extends redditBaseTools {
             if (!accessToken || !redditUsername) {
                 throw new Error('Access Token or reddit username not found in Redis');
             }
-            const response = await this.controller.getUserPosts(accessToken, redditUsername);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.getUserPosts(accessToken, appName, redditUsername);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in User Posts');
             throw error;
@@ -290,8 +295,9 @@ class userCommentsTool extends redditBaseTools {
             if (!accessToken ||!redditUsername) {
                 throw new Error('Access Token or reddit username not found in Redis');
             }
-            const response = await this.controller.getUserComments(accessToken, redditUsername);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.getUserComments(accessToken,appName,  redditUsername);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in User Comments');
             throw error;
@@ -321,8 +327,9 @@ class redditSearchTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.search(accessToken, query, sort, limit, after, subreddit);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.search(accessToken, appName, query, sort, limit, after, subreddit);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Reddit Search');
             throw error;
@@ -348,15 +355,16 @@ class redditSubmitPostTool extends redditBaseTools {
         });
     }
 
-    async call ({subreddit, title = '', kind = 'self', text = '',nsfw = false, spoiler = false,  url,mediaurl}) {
+    async call ({subreddit, title, kind = 'self', text ,nsfw = false, spoiler = false}) {
         try {
             logger.info('Reddit Post Tool Fired Successfully');
             const accessToken = await this.redis.get('reddit_access_token');
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.submitPost(accessToken, subreddit, title, kind, text, url, mediaurl, nsfw, spoiler);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.post(accessToken, appName, subreddit, title, kind, text, nsfw, spoiler);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Reddit Post');
             throw error;
@@ -382,8 +390,9 @@ class redditSubmitCommentTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.submitComment(accessToken, postId, text);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.comment(accessToken,appName, postId, text);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Reddit Comment');
             throw error;
@@ -410,8 +419,9 @@ class redditVoteTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.vote(accessToken, postId, direction);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.vote(accessToken, appName, postId, direction);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Reddit Vote');
             throw error;
@@ -441,8 +451,9 @@ class redditGetCommentTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.getComments(accessToken, postId, after, limit, subreddit, sort);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.getComments(accessToken, appName, postId, after, limit, subreddit, sort);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Reddit Comment');
             throw error;
@@ -468,8 +479,9 @@ class redditSubscribedSubredditTool extends redditBaseTools {
             if (!accessToken) {
                 throw new Error('Access Token not found in Redis');
             }
-            const response = await this.controller.getSubscribedSubreddits(accessToken, limit);
-            return response.data;
+            const appName = config.get("reddit.appName");
+            const response = await this.service.getSubscribedSubreddits(accessToken, appName, limit);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Reddit Subscribed Subreddits');
             throw error;
@@ -477,7 +489,7 @@ class redditSubscribedSubredditTool extends redditBaseTools {
     }
 }
 
-class detectIntentFromLLMNode extends redditBaseTools {
+class detectIntentFromLLMTool extends redditBaseTools {
     constructor() {
         super({
             name: "Detect Intent from LLM",
@@ -491,14 +503,62 @@ class detectIntentFromLLMNode extends redditBaseTools {
     async call ({prompt, chatModel}) {
         try {
             logger.info('Detect Intent from LLM Tool Fired Successfully');
-            const response = await this.controller.detectIntentFromLLM(prompt, chatModel);
-            return response.data;
+            const response = await this.service.getLLMResult(prompt, chatModel);
+            return { data: response, description: this.description };
         } catch (error) {
             logger.error('Error in Detect Intent from LLM');
             throw error;
         }
     }
 };
+
+class formatResponseTool extends redditBaseTools {
+    constructor() {
+        super({
+            name: "Format Reddit Response",
+            description: "Format Reddit Response",
+            schema: z.object({
+                response: z.object()
+            })
+        });
+    }
+
+    async call (state) {
+        try {
+            logger.info('Format Reddit Response Tool Fired Successfully');
+            const { toolOutput, intent, description, chatModel } = state;
+            const formattedResponse = await this.service.formatResponse(toolOutput, intent, description, chatModel);
+            return formattedResponse;
+        } catch (error) {
+            logger.error('Error in Format Reddit Response');
+            throw error;
+        }
+    }
+}
+
+class generateContentTool extends redditBaseTools {
+    constructor() {
+        super({
+            name: "Get content for Posting",
+            description: "Generate Passage on user input",
+            schema: z.object({
+                prompt: z.string()
+            })
+        });
+    }
+
+    async call (state) {
+        try {
+            logger.info('Get content for Posting Tool Fired Successfully');
+            const { toolParams, chatModel } = state;
+            const content = await this.service.generateContent(toolParams.prompt, chatModel);
+            return content;
+        } catch (error) {
+            logger.error('Error in Get content for Posting');
+            throw error;
+        }
+    }
+}
 
 module.exports = {
     authCodeTool,
@@ -516,5 +576,7 @@ module.exports = {
     redditVoteTool,
     redditGetCommentTool,
     redditSubscribedSubredditTool,
-    detectIntentFromLLMNode
+    detectIntentFromLLMTool,
+    formatResponseTool,
+    generateContentTool
 }

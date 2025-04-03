@@ -1,0 +1,3 @@
+const redditPostInformationPrompt = `Based on the following input from the user, generate a well-structured, engaging, and informative 100-word passage with a compelling title. Maintain coherence, clarity, and natural flow while expanding on the idea meaningfully. Avoid fluff and stay relevant to the original intent. The user’s input is: '{USER_INPUT}'. Ensure the response includes a clear and relevant title that reflects the content. Format the response as a JSON object with 'title' as the key for the title and 'content' as the key for the passage`
+
+module.exports = redditPostInformationPrompt;

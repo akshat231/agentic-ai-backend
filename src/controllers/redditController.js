@@ -2,7 +2,7 @@ const logger = require("../utils/logger");
 const redditService = require("../services/redditService");
 const config = require('config');
 const redis = require("../utils/redisDB");
-const initializeChatModel = require('../chatModel');
+const redditAgentRunner = require("../agentRunner/redditAgentRunner")
 
 const fetchAccessToken  =  async() => {
     try {
@@ -107,7 +107,19 @@ const search = async (accessToken, query, sort, limit, after, subreddit) => {
     }
 };
 
-const post = async (accessToken, subreddit, title, kind, text, url, mediaurl, nsfw, spoiler) => {
+// const post = async (accessToken, subreddit, title, kind, text, url, mediaurl, nsfw, spoiler) => {
+//     try {
+//         logger.info('post::controller');
+//         const appName = config.get("reddit.appName");
+//         const response = await redditService.post(accessToken, appName, subreddit, title, kind, text, url, mediaurl, nsfw, spoiler);
+//         return response;
+//     } catch (error) {
+//         throw error;
+//     }
+// };
+
+
+const post = async (accessToken, subreddit, title, kind, text, nsfw, spoiler) => {
     try {
         logger.info('post::controller');
         const appName = config.get("reddit.appName");
@@ -167,11 +179,24 @@ const processUserPrompt = async (body) => {
     try {
         logger.info('process-user-prompt::controller');
         const { prompt } = body;
-        const response = await redditService.processUserPrompt(prompt);
+        const response = await redditAgentRunner.processUserPrompt(prompt);
+        return response;
     } catch (error) {
         throw error;
     }
 };
+
+const testLLMResult = async (body, chatModel) => {
+    try {
+        logger.info('get-llm-result::controller');
+        const { prompt } = body;
+        const response = await redditService.testLLMResult(prompt, chatModel);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 
 const getLLMResult = async (body, chatModel) => {
     try {
@@ -179,6 +204,28 @@ const getLLMResult = async (body, chatModel) => {
         const { prompt } = body;
         const response = await redditService.getLLMResult(prompt, chatModel);
         return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+const formatResponse = async (body, chatModel) => {
+    try {
+        logger.info('format-response::controller');
+        const { toolOutput, intent, toolDescription } = body;
+        const formattedResponse = await redditService.formatResponse(toolOutput, intent, toolDescription, chatModel);
+        return formattedResponse;
+    } catch (error) {
+        throw error;
+    }
+};
+
+const generateContent = async (body, chatModel) => {
+    try {
+        logger.info('get-post-data::controller');
+        const { prompt } = body;
+        const postData = await redditService.generateContent(prompt, chatModel);
+        return postData;
     } catch (error) {
         throw error;
     }
@@ -200,6 +247,9 @@ module.exports = {
     getComments,
     getSubscribedSubreddits,
     processUserPrompt,
-    getLLMResult
+    testLLMResult,
+    getLLMResult,
+    formatResponse,
+    generateContent
 };
 
