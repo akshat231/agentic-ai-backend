@@ -15,9 +15,10 @@ Supported intents and their required parameters:
     - "after": Retrieve posts after this ID (default is null)
 - "user_posts": Get posts made by the authenticated user (no parameters required).
 - "user_comments": Get comments made by the authenticated user (no parameters required).
-- "generate_content": Generate Few Lines of Content for posts 
+- "generate_content": Generate a few lines of content for a post based on a topic or idea. 
   - Required Parameters:
-    - "prompt": Brief user Prompt about what to post
+    - "prompt": Brief user Prompt about what to generate from llm.
+    - "subreddit": subreddit name where user wants to post the content
 - "reddit_search": Search Reddit for posts
   - Required Parameters:
     - "query": Search query
@@ -29,6 +30,8 @@ Supported intents and their required parameters:
 - "submit_post": Submit a new post to a subreddit
   - Required Parameters:
     - "subreddit": Subreddit name
+    - "text": Body of the post given in the user prompt
+    - "title": Title of the post (if not provided explicitly, generate a concise title based on user prompt, do not use entire prompt as title. understand the logic of user prompt and generate a title based on it)
   - Optional Parameters:
     - "nsfw": Set to true if the post is NSFW (default is false)
     - "spoiler": Set to true if the post is a spoiler (default is false)
@@ -49,6 +52,8 @@ Examples:
 - Prompt: "What’s this?"
   Response: {{ "intent": "unknown", "parameters": {{}} }}
 
-User Prompt: {PROMPT}`;
+User Prompt: {PROMPT}
+Please respond with a raw JSON object only. Do not include code fences any Markdown formatting.
+`;
 
 module.exports = redditToolDetectorPrompt

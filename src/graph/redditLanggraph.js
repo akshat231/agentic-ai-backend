@@ -138,6 +138,9 @@ const redditSearchNode = async (state) => {
 
 const redditSubmitPostNode = async (state) => {
   try {
+    if (state.finalResponse) {
+      return { toolOutput: "error" };
+    }
     logger.info("Reddit Submit Post Node is fired");
     const response = await tools.reddit_submit_post_tool.call(state.toolParams);
     return { toolOutput: response.data, description: response.description };
@@ -214,8 +217,8 @@ const detectIntentFromLLMNode = async (state) => {
     const response = await tools.detect_intent_from_llm_tool.call(
       state
     );
-    logger.info(`Intent found to be: ${response.intent} with tool Params: ${JSON.stringify(response.parameters)}`)
-    return {intent: response.intent, toolParams: response.parameters};
+    logger.info(`Intent found to be: ${response.data.intent} with tool Params: ${JSON.stringify(response.data.parameters)}`)
+    return {intent: response.data.intent, toolParams: response.data.parameters};
   } catch (error) {
     logger.error(`Error firing detect intent from LLM tool: ${error.message}`);
     return { intent: "error" };
@@ -228,9 +231,7 @@ const generateContentNode = async (state) => {
     const response = await tools.generate_content_tool.call(
       state
     );
-    console.log('sdsada');
-    console.log(response);
-    return {toolParams: {title: response.title, text: response.content}};
+    return {toolParams: { ...state.toolParams, title: response.title, text: response.content}};
   } catch (error) {
     logger.error(`Error firing generating content tool: ${error.message}`);
     return { finalResponse: "an Error has occured in one step on the way" };
