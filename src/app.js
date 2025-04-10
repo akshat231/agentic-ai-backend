@@ -6,6 +6,7 @@ const config = require('config');
 const authMiddleware = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
+require('dotenv').config();
 
 const app = express();
 
@@ -37,8 +38,8 @@ apiRouter.use('/v1', routes);
 app.use(errorHandler);
 
 // Server setup
-const PORT = config.get('server.port');
-const HOST = config.get('server.host');
+const PORT = process.env.PORT || config.get('server.port');
+const HOST = process.env.HOST || config.get('server.host');
 
 app.listen(PORT, HOST, () => {
   console.log(`Server is running on ${HOST}:${PORT}`);
