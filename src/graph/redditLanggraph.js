@@ -13,7 +13,7 @@ const StateAnnotation = {
   toolParams: Object,
   toolOutput: Object,
   finalResponse: String,
-  chatModel: Object,
+  chatModel: Object
 };
 
 const tools = {

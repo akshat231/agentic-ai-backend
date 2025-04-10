@@ -77,7 +77,7 @@ router.get("/callback", (req, res, next) => {
     redis.set('user_permission', true);
     redis.expire('user_permission', 300);
     redis.set("reddit_auth_code", code);
-    redis.expire("reddit_auth_code", 300); // Expire in 1/2 hour
+    redis.expire("reddit_auth_code", 300);
     logger.info("Reddit authorization code stored in Redis");
     return res
       .status(200)

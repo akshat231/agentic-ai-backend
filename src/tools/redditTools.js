@@ -48,7 +48,7 @@ class authCodeTool extends redditBaseTools {
 
     async waitForAuthCode() {
         return new Promise((resolve, reject) => {
-            const maxAttempts = 30; // Timeout after ~5 minutes
+            const maxAttempts = 6; // Timeout after ~1 minutes
             let attempts = 0;
     
             const interval = setInterval(async () => {
