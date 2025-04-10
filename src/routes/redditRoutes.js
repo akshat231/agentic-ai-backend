@@ -8,16 +8,15 @@ const ApiResponse = require("../utils/apiResponse");
 const redis = require("../utils/redisDB");
 const redditController = require("../controllers/redditController");
 const initializeChatModel = require('../chatModel')
+require('dotenv').config(); 
 // Route to initiate Reddit OAuth by opening the browser
 router.get("/auth-code", async (req, res, next) => {
   try {
     // Construct the Reddit OAuth authorization URL
     const authUrl =
       `https://www.reddit.com/api/v1/authorize?` +
-      `client_id=${config.get(
-        "reddit.clientId"
-      )}&response_type=code&state=${config.get("reddit.state")}&` +
-      `redirect_uri=${config.get("reddit.redirectUri")}&scope=${config.get(
+      `client_id=${process.env.REDDIT_CLIENT_ID}&response_type=code&state=${config.get("reddit.state")}&` +
+      `redirect_uri=${process.env.REDDIT_REDIRECT_URI}&scope=${config.get(
         "reddit.scope"
       )}`;
     logger.info(`Reddit auth URL generated: ${authUrl}`);

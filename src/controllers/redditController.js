@@ -3,12 +3,13 @@ const redditService = require("../services/redditService");
 const config = require('config');
 const redis = require("../utils/redisDB");
 const redditAgentRunner = require("../agentRunner/redditAgentRunner")
+require('dotenv').config();
 
 const fetchAccessToken  =  async() => {
     try {
         logger.info('access-token::controller');
-        const clientId = config.get("reddit.clientId");
-        const redirectUri = config.get("reddit.redirectUri");
+        const clientId = process.env.REDDIT_CLIENT_ID;
+        const redirectUri = process.env.REDDIT_REDIRECT_URI
         const authCode = await redis.get("reddit_auth_code");
         logger.info(`Reddit auth code: ${authCode}`);
         const response = await redditService.fetchAccessToken(authCode, redirectUri, clientId);
