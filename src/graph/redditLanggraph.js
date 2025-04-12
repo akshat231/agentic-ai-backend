@@ -17,7 +17,6 @@ const StateAnnotation = {
 };
 
 const tools = {
-  auth_code_node: new redditTools.authCodeTool(),
   access_token_tool: new redditTools.accessTokenTool(),
   validate_access_token_tool: new redditTools.validateAccessTokenTool(),
   user_info_tool: new redditTools.userInfoTool(),
@@ -353,17 +352,12 @@ async function runGraph(prompt, chatModel) {
     const authCode = await redis.get("reddit_auth_code");
     const accessToken = await redis.get("reddit_access_token");
     const username = await redis.get("reddit_username");
-    if (!accessToken) {
-      if (!authCode) {
-        await tools.auth_code_node.call();
-      }
-      await tools.access_token_tool.call();
-    }
-    if (!username) {
-      if (!authCode) {
-        await tools.auth_code_node.call();
-      }
-      await tools.validate_access_token_tool.call();
+    if (!authCode || !accessToken || !username) {
+      logger.error(`Error running graph: Access failed`);
+      return {
+        toolOutput: null,
+        finalResponse: "An error occurred",
+      };
     }
     // Map the prompt to the state structure expected by StateAnnotation
     const initialState = { prompt, chatModel };

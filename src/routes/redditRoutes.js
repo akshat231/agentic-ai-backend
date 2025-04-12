@@ -8,42 +8,7 @@ const ApiResponse = require("../utils/apiResponse");
 const redis = require("../utils/redisDB");
 const redditController = require("../controllers/redditController");
 const initializeChatModel = require('../chatModel')
-// Route to initiate Reddit OAuth by opening the browser
-router.get("/auth-code", async (req, res, next) => {
-  try {
-    // Construct the Reddit OAuth authorization URL
-    const authUrl =
-      `https://www.reddit.com/api/v1/authorize?` +
-      `client_id=${config.get(
-        "reddit.clientId"
-      )}&response_type=code&state=${config.get("reddit.state")}&` +
-      `redirect_uri=${config.get("reddit.redirectUri")}&scope=${config.get(
-        "reddit.scope"
-      )}`;
-    logger.info(`Reddit auth URL generated: ${authUrl}`);
 
-    // Open the authorization URL in the default browser
-    import("open")
-      .then((open) => {
-        open.default(authUrl);
-      })
-      .catch((err) => {
-        logger.error(`Failed to open browser", ${err.message }`);
-      });
-
-    // Send an immediate response to Postman
-    return res
-      .status(200)
-      .json(
-        ApiResponse.success("Browser opened for authorization", { authUrl })
-      );
-  } catch (error) {
-    logger.error(`Error generating Reddit auth URL", ${error.message }`);
-    return res
-      .status(500)
-      .json(ApiResponse.error("Internal server error", 500));
-  }
-});
 
 // Route to handle the OAuth callback from Reddit
 router.get("/callback", (req, res, next) => {
@@ -389,6 +354,23 @@ router.post('/generate-content', async (req, res, next) => {
     return res.status(200).json(ApiResponse.success("Post data fetched", response));
   } catch (error) {
     logger.error(`Error in getting post data: ${error.message}`);
+    return res.status(500).json(ApiResponse.error("Internal server error", 500));
+  }
+});
+
+router.get('/check-tokens', async (req, res, next) => {
+  try {
+    const authCode = await redis.get('reddit_auth_code');
+    const accessToken = await redis.get('reddit_access_token');
+    const username = await redis.get('username');
+    const response = {
+      auth_code: !!authCode,
+      access_token: !!accessToken,
+      user_name: !!username
+    }
+    return res.status(200).json(ApiResponse.success("Tokens fetched successfully", response))
+  } catch (error) {
+    logger.error('Error in Validating Tokens')
     return res.status(500).json(ApiResponse.error("Internal server error", 500));
   }
 });
