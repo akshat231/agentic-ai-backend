@@ -15,77 +15,7 @@ class redditBaseTools extends Tool {
         this.redis = redis;
         this.service = redditServices;
       }
-}
-
-
-class authCodeTool extends redditBaseTools {
-    constructor() {
-        super({
-            name: "Get Reddit Auth Code",
-            description: "Get Reddit Auth Code and User Permissions",
-            schema: z.object({}),
-          });
-        }
-    async call() {
-        try {
-            logger.info('Auth Code Tool Fired Successfully');
-            let authConfig = {
-                method: 'get',
-                maxBodyLength: Infinity,
-                url: `${config.get('server.protocol')}://${config.get('server.host')}:${config.get('server.port')}/api/v1/reddit/auth-code`,
-                headers: { }
-              };
-              const response = await axios.request(authConfig);
-              logger.info("response fetched successfully");
-              const authCode = await this.waitForAuthCode();
-              logger.info('auth code is retrieved and stored in redis successfully');
-              return { data: response, description: this.description };
-        } catch (error) {
-            logger.error('Error in Auth Code Generation: ', error);
-            throw error;
-        }
-    }
-
-    async waitForAuthCode() {
-        return new Promise((resolve, reject) => {
-            const maxAttempts = 6; // Timeout after ~1 minutes
-            let attempts = 0;
-    
-            const interval = setInterval(async () => {
-                try {
-                    // Fetch user permission from Redis (correctly using await)
-                    const userPermission = await redis.get("user_permission");
-    
-                    if (userPermission === "true") {
-                        const code = await redis.get("reddit_auth_code");
-    
-                        if (code) {
-                            clearInterval(interval);
-                            return resolve(code);
-                        }
-                    } else if (userPermission === "false") {
-                        logger.info("User permission denied");
-                        clearInterval(interval);
-                        return reject(new Error("User denied Reddit authorization")); 
-                    } else {
-                        logger.info("Waiting for user permission...");
-                    }
-    
-                    attempts++;
-                    logger.info(`Waiting for auth code... Attempt ${attempts}/${maxAttempts}`);
-    
-                    if (attempts >= maxAttempts) {
-                        clearInterval(interval);
-                        reject(new Error("Timeout waiting for Reddit authorization code"));
-                    }
-                } catch (error) {
-                    clearInterval(interval);
-                    reject(error);
-                }
-            }, 10000); // Check every 10 seconds
-        });
-    }
-}    
+}   
 
 
 class accessTokenTool extends redditBaseTools  {
@@ -561,7 +491,6 @@ class generateContentTool extends redditBaseTools {
 }
 
 module.exports = {
-    authCodeTool,
     accessTokenTool,
     validateAccessTokenTool,
     userInfoTool,

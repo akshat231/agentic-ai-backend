@@ -17,7 +17,6 @@ const StateAnnotation = {
 };
 
 const tools = {
-  auth_code_node: new redditTools.authCodeTool(),
   access_token_tool: new redditTools.accessTokenTool(),
   validate_access_token_tool: new redditTools.validateAccessTokenTool(),
   user_info_tool: new redditTools.userInfoTool(),
@@ -200,25 +199,29 @@ const redditSubscribedSubredditNode = async (state) => {
   }
 };
 
-
 const errorNode = async (state) => {
   try {
     logger.info("Error Node is fired");
-    return { toolOutput: 'Api failed with error', intent: 'Error' };
+    return { toolOutput: "Api failed with error", intent: "Error" };
   } catch (error) {
     logger.error(`Error firing error node: ${error.message}`);
-    return { toolOutput: "Error occurred in error node", intent: 'Error' };
+    return { toolOutput: "Error occurred in error node", intent: "Error" };
   }
 };
 
 const detectIntentFromLLMNode = async (state) => {
   try {
     logger.info("Detect Intent from LLM Node is fired");
-    const response = await tools.detect_intent_from_llm_tool.call(
-      state
+    const response = await tools.detect_intent_from_llm_tool.call(state);
+    logger.info(
+      `Intent found to be: ${
+        response.data.intent
+      } with tool Params: ${JSON.stringify(response.data.parameters)}`
     );
-    logger.info(`Intent found to be: ${response.data.intent} with tool Params: ${JSON.stringify(response.data.parameters)}`)
-    return {intent: response.data.intent, toolParams: response.data.parameters};
+    return {
+      intent: response.data.intent,
+      toolParams: response.data.parameters,
+    };
   } catch (error) {
     logger.error(`Error firing detect intent from LLM tool: ${error.message}`);
     return { intent: "error" };
@@ -228,10 +231,14 @@ const detectIntentFromLLMNode = async (state) => {
 const generateContentNode = async (state) => {
   try {
     logger.info("Generating Content Node is fired");
-    const response = await tools.generate_content_tool.call(
-      state
-    );
-    return {toolParams: { ...state.toolParams, title: response.title, text: response.content}};
+    const response = await tools.generate_content_tool.call(state);
+    return {
+      toolParams: {
+        ...state.toolParams,
+        title: response.title,
+        text: response.content,
+      },
+    };
   } catch (error) {
     logger.error(`Error firing generating content tool: ${error.message}`);
     return { finalResponse: "an Error has occured in one step on the way" };
@@ -241,9 +248,7 @@ const generateContentNode = async (state) => {
 const formatData = async (state) => {
   try {
     logger.info("Formatting Data Node is fired");
-    const response = await tools.format_api_response_tool.call(
-      state
-    );
+    const response = await tools.format_api_response_tool.call(state);
     return { finalResponse: response };
   } catch (error) {
     logger.error(`Error firing formatting data tool: ${error.message}`);
@@ -283,7 +288,7 @@ graph.addNode(
   redditSubscribedSubredditNode
 );
 
-graph.addNode('error_node', errorNode);
+graph.addNode("error_node", errorNode);
 
 graph.addNode("detect_intent_from_llm_node", detectIntentFromLLMNode);
 
@@ -294,7 +299,7 @@ graph.addEdge(START, "detect_intent_from_llm_node");
 
 graph.addConditionalEdges("detect_intent_from_llm_node", (state) => {
   const { intent, toolParams } = state;
-  if (intent === "unknown") return 'format_data_node';
+  if (intent === "unknown") return "format_data_node";
   switch (intent) {
     case "user_info":
       return "user_info_node";
@@ -320,10 +325,10 @@ graph.addConditionalEdges("detect_intent_from_llm_node", (state) => {
     //   return "reddit_get_comment_node";
     case "subscribed_subreddits":
       return "reddit_subscribed_subreddit_node";
-    case 'generate_content': 
+    case "generate_content":
       return "generate_content_node";
     default:
-      return 'error_node';
+      return "error_node";
   }
 });
 
@@ -340,7 +345,7 @@ graph.addEdge("reddit_submit_post_node", "format_data_node");
 // graph.addEdge("reddit_get_comment_node", "format_data_node");
 graph.addEdge("reddit_subscribed_subreddit_node", "format_data_node");
 graph.addEdge("error_node", "format_data_node");
-graph.addEdge("generate_content_node", "reddit_submit_post_node")
+graph.addEdge("generate_content_node", "reddit_submit_post_node");
 graph.addEdge("format_data_node", END);
 
 // 5. Compile the Graph
@@ -353,17 +358,12 @@ async function runGraph(prompt, chatModel) {
     const authCode = await redis.get("reddit_auth_code");
     const accessToken = await redis.get("reddit_access_token");
     const username = await redis.get("reddit_username");
-    if (!accessToken) {
-      if (!authCode) {
-        await tools.auth_code_node.call();
-      }
-      await tools.access_token_tool.call();
-    }
-    if (!username) {
-      if (!authCode) {
-        await tools.auth_code_node.call();
-      }
-      await tools.validate_access_token_tool.call();
+    if (!authCode || !accessToken || !username) {
+      logger.error(`Error running graph: Access failed`);
+      return {
+        toolOutput: null,
+        finalResponse: "An error occurred",
+      };
     }
     // Map the prompt to the state structure expected by StateAnnotation
     const initialState = { prompt, chatModel };
