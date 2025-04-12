@@ -10,8 +10,24 @@ require('dotenv').config();
 
 const app = express();
 
-// Basic Middleware
-app.use(cors(config.get('cors')));
+
+const allowedOrigins = [
+  process.env.REQUEST_ORIGIN || '*'
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+//Basic Middleware
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(morgan(config.get('logging.format')));
 app.use(express.json());
